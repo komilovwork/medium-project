@@ -10,7 +10,7 @@ COPY . /my_code/
 
 RUN pip install -r requirements.txt
 
-RUN cp .env.example .env
+RUN #cp .env.example .env
 
 COPY .deploy/entrypoint.sh /
 RUN chmod +x /entrypoint.sh

@@ -1,61 +1,52 @@
-version: '3.3'
+version: "3.9"
 services:
   medium_app:
-    build:
-      context: /workspace/abdulazizkomilov/repo
     container_name: medium_app
+    restart: always
+    volumes:
+      - .:/my_code
+      # - static_volume:/my_code/staticfiles
+    image: medium_app:latest
+    build: .
+    env_file:
+      - .env.example
+    ports:
+      - "8000:8000"
     depends_on:
       - medium_db_host
       - medium_redis_host
-    environment:
-      DB_ENGINE: django.db.backends.postgresql_psycopg2
-      DB_HOST: medium_db_host
-      DB_NAME: medium_db
-      DB_PASSWORD: medium_user_password
-      DB_PORT: '5432'
-      DB_USER: medium_user
-      DEBUG: "True"
-      EMAIL_BACKEND: django.core.mail.backends.smtp.EmailBackend
-      EMAIL_HOST: smtp.gmail.com
-      EMAIL_HOST_PASSWORD: awcbkzxyfbhcxkku
-      EMAIL_HOST_USER: abdulazizkomilov2001@gmail.com
-      EMAIL_PORT: '587'
-      EMAIL_USE_TLS: "True"
-      REDIS_DB: '1'
-      REDIS_HOST: medium_redis_host
-      REDIS_PORT: '6379'
-      SECRET_KEY: g7df7fg8hgfdg9fdg8d7fg567sd5f098dfg7df
-    image: medium_app:latest
     networks:
-      - medium_network
-    ports:
-      - "8000:8000"
-    restart: always
-    volumes:
-      - /workspace/abdulazizkomilov/repo:/my_code:rw
+      medium_network:
 
   medium_db_host:
     container_name: medium_db_host
-    environment:
-      POSTGRES_DB: medium_db
-      POSTGRES_PASSWORD: medium_user_password
-      POSTGRES_USER: medium_user
+    image: postgres:15-alpine
+    restart: always
+    env_file:
+      - .env.example
     expose:
       - "5432"
-    image: postgres:15-alpine
+    environment:
+      - POSTGRES_USER=${DB_USER-medium_user}
+      - POSTGRES_PASSWORD=${DB_PASSWORD-medium_user_password}
+      - POSTGRES_DB=${DB_NAME-medium_db}
     networks:
       - medium_network
-    restart: always
 
   medium_redis_host:
     container_name: medium_redis_host
+    image: "redis:7-alpine"
+    env_file:
+      - .env.example
     expose:
       - "6379"
-    image: redis:7-alpine
-    networks:
-      - medium_network
     restart: always
+    networks:
+       - medium_network
 
 networks:
   medium_network:
-    driver: bridge
+    name: medium_network
+
+# volumes:
+#   static_volume:
