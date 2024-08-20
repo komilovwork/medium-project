@@ -46,7 +46,6 @@ services:
 
 networks:
   medium_network:
-    name: medium_network
 
 # volumes:
 #   static_volume:
