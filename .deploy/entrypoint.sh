@@ -28,4 +28,4 @@ django-admin compilemessages
 echo "Successfully compiled messages"
 
 echo "Starting server"
-gunicorn core.wsgi:application --bind 0.0.0.0:8000
+gunicorn core.wsgi:application --bind 0.0.0.0:8002
