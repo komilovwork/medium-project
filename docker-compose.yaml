@@ -48,5 +48,9 @@ networks:
   medium_network:
     name: medium_network
 
+volumes:
+  medium_code_volume:
+    driver: local
+
 # volumes:
 #   static_volume:
