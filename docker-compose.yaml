@@ -45,4 +45,3 @@ services:
 
 networks:
   medium_network:
-    name: medium_network_${USER_ID}
