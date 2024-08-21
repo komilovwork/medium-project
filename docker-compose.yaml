@@ -1,25 +1,24 @@
 version: "3.3"
 services:
   medium_app:
-    container_name: medium_app
+    container_name: medium_app_${USER_ID}
     restart: always
     volumes:
       - .:/my_code
-      # - static_volume:/my_code/staticfiles
     image: medium_app:latest
     build: .
     env_file:
       - .env.example
     ports:
-      - "8002:8002"
+      - "8000:8000"
     depends_on:
       - medium_db_host
       - medium_redis_host
     networks:
-      medium_network:
+      - medium_network
 
   medium_db_host:
-    container_name: medium_db_host
+    container_name: medium_db_host_${USER_ID}
     image: postgres:15-alpine
     restart: always
     env_file:
@@ -34,7 +33,7 @@ services:
       - medium_network
 
   medium_redis_host:
-    container_name: medium_redis_host
+    container_name: medium_redis_host_${USER_ID}
     image: "redis:7-alpine"
     env_file:
       - .env.example
@@ -42,14 +41,8 @@ services:
       - "6379"
     restart: always
     networks:
-       - medium_network
+      - medium_network
 
 networks:
   medium_network:
-
-volumes:
-  medium_code_volume:
-    driver: local
-
-# volumes:
-#   static_volume:
+    name: medium_network_${USER_ID}
