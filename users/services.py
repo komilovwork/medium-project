@@ -16,15 +16,15 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from users.enums import TokenType
 
 # redis uchun malumotlarni olamiz
-REDIS_HOST = config("REDIS_HOST", 'localhost')
-REDIS_PORT = config("REDIS_PORT", 6379)
-REDIS_DB = config("REDIS_DB", 1)
+# REDIS_HOST = config("REDIS_HOST", 'localhost')
+# REDIS_PORT = config("REDIS_PORT", 6379)
+# REDIS_DB = config("REDIS_DB", 1)
 User = get_user_model()
 
 class TokenService:
     @classmethod
     def get_redis_client(cls) -> redis.Redis:
-        return redis.Redis(host='redis-14589.c135.eu-central-1-1.ec2.redns.redis-cloud.com', port=14589, password='4SZQKWQSzNUK75M0AhZxTMKUZaaSwfj1')
+        return redis.Redis.from_url(settings.REDIS_URL)
 
     @classmethod
     def get_valid_tokens(cls, user_id: int, token_type: TokenType) -> set:

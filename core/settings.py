@@ -180,14 +180,11 @@ MEDIA_ROOT = BASE_DIR / "media"
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
-REDIS_HOST = config('REDIS_HOST', default='localhost')
-REDIS_PORT = config('REDIS_PORT', default='6379')
-REDIS_DB = config('REDIS_DB', default='1')
+# REDIS_HOST = config('REDIS_HOST', default='localhost')
+# REDIS_PORT = config('REDIS_PORT', default='6379')
+# REDIS_DB = config('REDIS_DB', default='1')
 
-REDIS_URL = redis.Redis(
-  host='redis-14589.c135.eu-central-1-1.ec2.redns.redis-cloud.com',
-  port=14589,
-  password='4SZQKWQSzNUK75M0AhZxTMKUZaaSwfj1')
+REDIS_URL = 'redis://default:4SZQKWQSzNUK75M0AhZxTMKUZaaSwfj1@redis-14589.c135.eu-central-1-1.ec2.redns.redis-cloud.com:14589'
 
 CACHES = {
     'default': {
