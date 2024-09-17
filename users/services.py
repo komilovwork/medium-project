@@ -24,7 +24,7 @@ User = get_user_model()
 class TokenService:
     @classmethod
     def get_redis_client(cls) -> redis.Redis:
-        return redis.Redis(host=REDIS_HOST, port=REDIS_PORT, db=REDIS_DB)
+        return redis.Redis(host='redis-14589.c135.eu-central-1-1.ec2.redns.redis-cloud.com', port=14589, password='4SZQKWQSzNUK75M0AhZxTMKUZaaSwfj1')
 
     @classmethod
     def get_valid_tokens(cls, user_id: int, token_type: TokenType) -> set:

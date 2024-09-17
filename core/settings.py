@@ -6,6 +6,7 @@ from django.utils.translation import gettext_lazy as _
 from loguru import logger
 import sys
 from .custom_logging import InterceptHandler
+import redis
 
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -183,7 +184,10 @@ REDIS_HOST = config('REDIS_HOST', default='localhost')
 REDIS_PORT = config('REDIS_PORT', default='6379')
 REDIS_DB = config('REDIS_DB', default='1')
 
-REDIS_URL = f'redis://{REDIS_HOST}:{REDIS_PORT}/{REDIS_DB}'
+REDIS_URL = redis.Redis(
+  host='redis-14589.c135.eu-central-1-1.ec2.redns.redis-cloud.com',
+  port=14589,
+  password='4SZQKWQSzNUK75M0AhZxTMKUZaaSwfj1')
 
 CACHES = {
     'default': {
