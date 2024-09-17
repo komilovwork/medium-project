@@ -119,7 +119,7 @@ class SendEmailService:
 class OTPService:
     @classmethod
     def get_redis_conn(cls) -> redis.Redis:
-        return redis.Redis(host=REDIS_HOST, port=REDIS_PORT, db=REDIS_DB)
+        return redis.Redis.from_url(settings.REDIS_URL)
 
     @classmethod
     def generate_otp(
