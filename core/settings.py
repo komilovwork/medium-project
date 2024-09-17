@@ -16,7 +16,7 @@ SECRET_KEY = config('SECRET_KEY', default='hjg^&%**%%^*GHVGJHGKJGKH')
 DEBUG = config('DEBUG', default=False, cast=bool)
 
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['*']
 
 # Application definition
 
@@ -38,6 +38,7 @@ EXTERNAL_APPS = [
     'django_filters',
     'ckeditor',
     'ckeditor_uploader',
+    "corsheaders",
 ]
 
 LOCAL_APPS = [
@@ -65,6 +66,7 @@ CKEDITOR_CONFIGS = {
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
+    "corsheaders.middleware.CorsMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
@@ -76,6 +78,8 @@ MIDDLEWARE = [
 ]
 
 ROOT_URLCONF = "core.urls"
+
+CORS_ALLOW_ALL_ORIGINS = True
 
 TEMPLATES = [
     {
@@ -98,24 +102,24 @@ WSGI_APPLICATION = "core.wsgi.application"
 # Database
 # https://docs.djangoproject.com/en/5.0/ref/settings/#databases
 
-# DATABASES = {
-#     "default": {
-#         "ENGINE": "django.db.backends.sqlite3",
-#         "NAME": BASE_DIR / "db.sqlite3",
-#     }
-# }
-
-
 DATABASES = {
-    'default': {
-        'ENGINE': config('DB_ENGINE', default='django.db.backends.sqlite3'),
-        'NAME': config('DB_NAME', default='db.sqlite3'),
-        'USER': config('DB_USER', default=''),
-        'PASSWORD': config('DB_PASSWORD', default=''),
-        'HOST': config('DB_HOST', default=''),
-        'PORT': config('DB_PORT', default=''),
+    "default": {
+        "ENGINE": "django.db.backends.sqlite3",
+        "NAME": BASE_DIR / "db.sqlite3",
     }
 }
+
+
+# DATABASES = {
+#     'default': {
+#         'ENGINE': config('DB_ENGINE', default='django.db.backends.sqlite3'),
+#         'NAME': config('DB_NAME', default='db.sqlite3'),
+#         'USER': config('DB_USER', default=''),
+#         'PASSWORD': config('DB_PASSWORD', default=''),
+#         'HOST': config('DB_HOST', default=''),
+#         'PORT': config('DB_PORT', default=''),
+#     }
+# }
 
 
 # Password validation
