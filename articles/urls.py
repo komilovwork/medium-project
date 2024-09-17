@@ -3,6 +3,7 @@
 
 from django.urls import path, include
 from . import views
+from django.http import JsonResponse
 from rest_framework.routers import DefaultRouter
 
 router = DefaultRouter()
@@ -11,6 +12,7 @@ router.register(r'comments', views.CommentsView, basename='comments')
 
 
 urlpatterns = [
+    path('', lambda _: JsonResponse({'detail': 'Healthy'}), name='health'),
     path('articles/<int:id>/clap/', views.ClapView.as_view(), name='article-clap'),
     path('articles/<int:id>/report/', views.ReportArticleView.as_view(), name='report-article'),
     path('articles/faqs/', views.FAQListView.as_view(), name='faq-list'),
