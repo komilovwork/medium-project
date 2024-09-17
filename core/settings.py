@@ -290,25 +290,25 @@ EMAIL_HOST_PASSWORD = config('EMAIL_HOST_PASSWORD', default='')
 
 # LOGURU settings
 
-LOGGING = {
-    'version': 1,
-    'disable_existing_loggers': False,
-    'handlers': {
-        'intercept': {
-            '()': InterceptHandler,
-            'level': 0,
-        },
-        'file': {
-            'level': 'DEBUG',
-            'class': 'logging.FileHandler',
-            'filename': 'django.log',
-        },
-    },
-    'loggers': {
-        '': {
-            'handlers': ['intercept', 'file'],
-            'level': "DEBUG",
-            'propagate': True,
-        },
-    }
-}
+# LOGGING = {
+#     'version': 1,
+#     'disable_existing_loggers': False,
+#     'handlers': {
+#         'intercept': {
+#             '()': InterceptHandler,
+#             'level': 0,
+#         },
+#         'file': {
+#             'level': 'DEBUG',
+#             'class': 'logging.FileHandler',
+#             'filename': 'django.log',
+#         },
+#     },
+#     'loggers': {
+#         '': {
+#             'handlers': ['intercept', 'file'],
+#             'level': "DEBUG",
+#             'propagate': True,
+#         },
+#     }
+# }
