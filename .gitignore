@@ -89,7 +89,6 @@ local_settings.py
 .env.local
 *.sqlite3
 /media
-/static
 # ignore virtualenvs
 venv/
 env/
@@ -98,8 +97,6 @@ env/
 # Custom
 .vscode/
 .idea/
-static
-staticfiles
 .ruff_cache
 media
 rollout.sh
