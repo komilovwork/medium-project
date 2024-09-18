@@ -147,7 +147,15 @@ class LogoutView(generics.GenericAPIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def post(self, request, *args, **kwargs):
-        UserService.create_tokens(request.user, access='fake_token', refresh='fake_token', is_force_add_to_redis=True)
+        user = request.user
+
+        # Invalidate the old tokens
+        access_token = request.headers.get('Authorization').split(' ')[1]
+        TokenService.delete_token(user.id, access_token, TokenType.ACCESS)
+        
+        # Optionally: Create fake tokens to invalidate old tokens in Redis
+        UserService.create_tokens(user, access='fake_token', refresh='fake_token', is_force_add_to_redis=True)
+
         return Response({"detail": "Mufaqqiyatli chiqildi."})
     
 

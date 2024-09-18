@@ -48,6 +48,14 @@ class TokenService:
         # Add new token, don't delete old tokens
         redis_client.sadd(token_key, token)
         redis_client.expire(token_key, expire_time)
+    
+    @classmethod
+    def delete_token(cls, user_id: int, token: str, token_type: TokenType) -> None:
+        redis_client = cls.get_redis_client()
+        token_key = f"user:{user_id}:{token_type}"
+
+        # Remove the token if it exists
+        redis_client.srem(token_key, token)
 
 
     @classmethod
