@@ -43,15 +43,65 @@ class SignupView(APIView):
     def post(self, request):
         serializer = UserSerializer(data=request.data)
         if serializer.is_valid():
-            user = serializer.save()
-            refresh = RefreshToken.for_user(user)
-            user_data = UserSerializer(user).data
-            return Response({
-                'user': user_data,
-                'refresh': str(refresh),
-                'access': str(refresh.access_token),
-            }, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            email = serializer.validated_data['email']
+            user = User.objects.get(email=email, is_active=True)
+            if user:
+                return Response({"detail": "User already exists."}, status=status.HTTP_400_BAD_REQUEST)
+
+            otp_code, otp_secret = OTPService.generate_otp(email=email, expire_in=2 * 60)
+
+            try:
+                SendEmailService.send_email(email, otp_code)
+                serializer.save()
+                return Response({
+                    "email": email,
+                    "otp_secret": otp_secret,
+                }, status=status.HTTP_201_CREATED)
+            except Exception as e:
+                redis_conn = OTPService.get_redis_conn()
+                redis_conn.delete(f"{email}:otp")
+                logger.error(f"Error sending email: {e}")
+                return Response({"detail": "Emailga xabar yuborishda xatolik yuz berdi"}, 
+                                status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        else:
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+
+class VerifyView(generics.CreateAPIView):
+    permission_classes = [permissions.AllowAny]
+    serializer_class = ForgotPasswordVerifyRequestSerializer
+    authentication_classes = []
+
+    def post(self, request, *args, **kwargs):
+        redis_conn = OTPService.get_redis_conn()
+        otp_secret = kwargs.get('otp_secret')
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        
+        email = serializer.validated_data['email']
+        otp_code = serializer.validated_data['otp_code']
+        
+        users = User.objects.filter(email=email, is_active=False)
+        if not users.exists():
+            raise exceptions.NotFound("User not found or already active")
+
+        user = users.first()
+
+        try:
+            OTPService.check_otp(email, otp_code, otp_secret)
+        except Exception as e:
+            raise ValidationError("Invalid OTP")
+        
+        user.is_active = True
+        user.save()
+    
+        redis_conn.delete(f"{email}:otp")
+
+        tokens = UserService.create_tokens(user, is_force_add_to_redis=True)
+
+        return Response(tokens)
+
 
 
 

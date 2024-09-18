@@ -18,7 +18,7 @@ class UserSerializer(serializers.ModelSerializer):   # user uchun [serializer]()
         fields = ['id', 'username', 'first_name', 'last_name', 'middle_name', 'email', 'avatar', 'password']
         extra_kwargs = {'password': {'write_only': True}}
 
-    def create(self, validated_data):                # user create qilish uchun method
+    def create(self, validated_data):
         user = User(
             email=validated_data.get('email', ''),
             username=validated_data['username'],
@@ -26,6 +26,7 @@ class UserSerializer(serializers.ModelSerializer):   # user uchun [serializer]()
             last_name=validated_data.get('last_name', ''),
             middle_name=validated_data.get('middle_name', '')
         )
+        user.is_active=False
         user.set_password(validated_data['password'])
         user.avatar = validated_data.get('avatar', '')
         user.save()
