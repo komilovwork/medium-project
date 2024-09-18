@@ -156,10 +156,10 @@ USE_TZ = True
 LANGUAGES = [
     ('en', _('English')),
     ('uz', _('Uzbek')),
-    ('ru', _('Russian')),
+    # ('ru', _('Russian')),
 ]
 
-MODELTRANSLATION_LANGUAGES = ('en', 'uz', 'ru',)
+MODELTRANSLATION_LANGUAGES = ('en', 'uz',)
 MODELTRANSLATION_DEFAULT_LANGUAGE = 'uz'
 
 LOCALE_PATHS = [
@@ -206,8 +206,8 @@ SESSION_CACHE_ALIAS = "default"
 REST_FRAMEWORK = {
     'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',   # drf_spectacular swagger uchun sozlamalar
     'DEFAULT_AUTHENTICATION_CLASSES': [
-        'rest_framework.authentication.BasicAuthentication',        # swagger orqali authenticate qilishda username va password orqali kirishga ruxsat berish uchun
         'users.authentications.CustomJWTAuthentication',
+        'rest_framework.authentication.BasicAuthentication',        # swagger orqali authenticate qilishda username va password orqali kirishga ruxsat berish uchun
     ],
     'DEFAULT_PERMISSION_CLASSES': [
         'rest_framework.permissions.AllowAny',
@@ -225,13 +225,7 @@ SPECTACULAR_SETTINGS = {
     'VERSION': '1.0.0',
     'SERVE_INCLUDE_SCHEMA': False,
     'COMPONENT_SPLIT_REQUEST': True,  # yangi qo'shildi | fayl yuklash uchun majburiy
-    'SECURITY_DEFINITIONS': {
-        'Bearer': {
-            'type': 'apiKey',
-            'name': 'Authorization',
-            'in': 'header'
-        }
-    },
+    'SECURITY': [{'BasicAuth': []}, {'JWTAuth': []}],
 }
 
 # JWT

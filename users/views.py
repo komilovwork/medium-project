@@ -44,10 +44,6 @@ class SignupView(APIView):
         serializer = UserSerializer(data=request.data)
         if serializer.is_valid():
             email = serializer.validated_data['email']
-            user = User.objects.get(email=email, is_active=True)
-            if user:
-                return Response({"detail": "User already exists."}, status=status.HTTP_400_BAD_REQUEST)
-
             otp_code, otp_secret = OTPService.generate_otp(email=email, expire_in=2 * 60)
 
             try:
@@ -87,6 +83,7 @@ class VerifyView(generics.CreateAPIView):
             raise exceptions.NotFound("User not found or already active")
 
         user = users.first()
+        print("user: 90", user)
 
         try:
             OTPService.check_otp(email, otp_code, otp_secret)
@@ -121,11 +118,8 @@ class LoginView(APIView):
         )
 
         if user is not None:
-            refresh = RefreshToken.for_user(user)
-            return Response({
-                'refresh': str(refresh),
-                'access': str(refresh.access_token),
-            }, status=status.HTTP_200_OK)
+            tokens = UserService.create_tokens(user, is_force_add_to_redis=True)
+            return Response(tokens, status=status.HTTP_200_OK)
         else:
             return Response({'detail': 'Hisob maʼlumotlari yaroqsiz'}, status=status.HTTP_401_UNAUTHORIZED)
 
