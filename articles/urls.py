@@ -13,6 +13,8 @@ router.register(r'comments', views.CommentsView, basename='comments')
 
 urlpatterns = [
     path('', lambda _: JsonResponse({'detail': 'Healthy'}), name='health'),
+    path('articles/topics/', views.TopicView.as_view(), name='topics'),
+    path('articles/topics/<int:pk>/', views.TopicDetailView.as_view(), name='topic-detail'),
     path('articles/<int:id>/clap/', views.ClapView.as_view(), name='article-clap'),
     path('articles/<int:id>/report/', views.ReportArticleView.as_view(), name='report-article'),
     path('articles/faqs/', views.FAQListView.as_view(), name='faq-list'),

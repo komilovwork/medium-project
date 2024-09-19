@@ -9,11 +9,21 @@ from .models import Article, ArticleStatus, TopicFollow, Topic, Comment, Favorit
 from articles.serializers import (
     ArticleCreateSerializer, ArticleDetailSerializer, 
     CommentSerializer, ArticleListSerializer, 
-    ArticleDetailCommentsSerializer, ClapSerializer, FAQSerializer )
+    ArticleDetailCommentsSerializer, ClapSerializer, FAQSerializer, TopicSerializer )
 from django_filters.rest_framework import DjangoFilterBackend
 from articles.filters import ArticleFilter
 from rest_framework.decorators import action
 from users.models import ReadingHistory, Pin
+
+class TopicView(generics.ListCreateAPIView):
+    queryset = Topic.objects.all()
+    serializer_class = TopicSerializer
+    http_method_names = ['get']
+
+class TopicDetailView(generics.RetrieveUpdateDestroyAPIView):
+    queryset = Topic.objects.all()
+    serializer_class = TopicSerializer
+    http_method_names = ['get']
 
 
 class ArticlesView(viewsets.ModelViewSet):
