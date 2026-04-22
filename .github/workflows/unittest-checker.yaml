@@ -1,4 +1,5 @@
 name: Medium Clone Project CI/CD
+
 on:
   workflow_dispatch:
     inputs:
@@ -22,16 +23,16 @@ jobs:
           rm -rf original-repo
           rm -rf forked-repo
 
-      - name: Send a signal to the webhook that the job has started.
+      - name: Send started signal
         run: |
-          curl -X PUT --location 'https://api-dev.mohirpool.uz/api/site/accelerators/code-reviews/github-feedbacks/${{ github.event.inputs.github_feedback_id }}/' \
-          --header 'X-API-KEY: ${{ secrets.X_API_KEY }}' \
-          --form 'github_username=${{ github.actor }}' \
-          --form 'action_run_id=${{ github.run_id }}' \
-          --form 'status=started'
+          curl -sf -X PUT "${{ secrets.API_BASE_URL }}/github/feedbacks/${{ github.event.inputs.github_feedback_id }}/" \
+            --header "X-API-KEY: ${{ secrets.X_API_KEY }}" \
+            --form "github_username=${{ github.actor }}" \
+            --form "action_run_id=${{ github.run_id }}" \
+            --form "status=started"
 
       - name: Checkout original repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           repository: Mohirdevelopers/medium-clone-backend-initial
           path: original-repo
@@ -39,62 +40,67 @@ jobs:
           fetch-depth: 0
 
       - name: Checkout forked repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           path: forked-repo
           ref: main
           fetch-depth: 0
 
-      - name: Move tests folder from original to forked
+      - name: Inject tests from original repo
         run: |
           rm -rf forked-repo/tests
           mv original-repo/tests forked-repo/
           rm -rf original-repo
 
-      - name: Create .env file from .env.example
+      - name: Create .env file
         working-directory: forked-repo
         run: cp .env.example .env
 
-      - name: Set environment variables
-        working-directory: forked-repo
-        run: export $(grep -v '^#' .env | xargs)
-
-      - name: Build and run application via docker compose
+      - name: Build and start application
         working-directory: forked-repo
         run: |
           docker compose up -d --build
-          sleep 5s
+          sleep 10s
           docker ps -a
-          sleep 5s
-          docker logs medium_app
+          docker logs medium_app || true
 
       - name: Check application health
         run: |
-          sleep 5s
-          curl -v http://127.0.0.1:8000/health/
+          for i in $(seq 1 10); do
+            if curl -sf http://127.0.0.1:8000/health/; then
+              echo "Healthy"; break
+            fi
+            sleep 3
+          done
 
-      - name: Run application tests via pytest
+      - name: Run tests
         working-directory: forked-repo
-        run: docker compose exec medium_app pytest ${{ github.event.inputs.tests_path }} --cache-clear -vv --json-report --json-report-file=./reports/unittest-checker-report.json --json-report-indent=2
+        run: |
+          mkdir -p reports
+          docker compose exec -T medium_app pytest ${{ github.event.inputs.tests_path }} \
+            --cache-clear -vv \
+            --json-report \
+            --json-report-file=./reports/unittest-checker-report.json \
+            --json-report-indent=2
         continue-on-error: true
 
-      - name: Upload created pytest report file as an artifact
+      - name: Upload test report artifact
         uses: actions/upload-artifact@v4
         with:
           name: unittest-checker-artifact
           path: forked-repo/reports/unittest-checker-report.json
+          retention-days: 30
 
-      - name: Send a signal to the webhook that the job has finished.
+      - name: Send finished signal
         if: always()
         run: |
-          status=${{ job.status }}
-          if [ "$status" == "success" ]; then
-            status="completed"
+          if [ "${{ job.status }}" = "success" ]; then
+            STATUS="completed"
           else
-            status="failed"
+            STATUS="failed"
           fi
-          curl -X PUT --location 'https://api-dev.mohirpool.uz/api/site/accelerators/code-reviews/github-feedbacks/${{ github.event.inputs.github_feedback_id }}/' \
-          --header 'X-API-KEY: ${{ secrets.X_API_KEY }}' \
-          --form 'github_username=${{ github.actor }}' \
-          --form 'action_run_id=${{ github.run_id }}' \
-          --form "status=$status"
+          curl -sf -X PUT "${{ secrets.API_BASE_URL }}/github/feedbacks/${{ github.event.inputs.github_feedback_id }}/" \
+            --header "X-API-KEY: ${{ secrets.X_API_KEY }}" \
+            --form "github_username=${{ github.actor }}" \
+            --form "action_run_id=${{ github.run_id }}" \
+            --form "status=$STATUS"
