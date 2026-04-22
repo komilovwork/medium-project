@@ -10,6 +10,18 @@ on:
       github_feedback_id:
         description: 'Github feedback id'
         required: true
+      fork_owner:
+        description: 'Fork repository owner'
+        required: true
+      fork_repo:
+        description: 'Fork repository name'
+        required: true
+      source_owner:
+        description: 'Source repository owner'
+        required: true
+      source_repo:
+        description: 'Source repository name'
+        required: true
 
 jobs:
   deploy:
@@ -25,8 +37,6 @@ jobs:
 
       - name: Send started signal
         run: |
-          echo "api ${{ secrets.API_BASE_URL }}"
-          echo "x api ${{ secrets.X_API_KEY }}"
           curl -sf -X PUT "${{ secrets.API_BASE_URL }}/github/feedbacks/${{ github.event.inputs.github_feedback_id }}/" \
             --header "X-API-KEY: ${{ secrets.X_API_KEY }}" \
             --form "github_username=${{ github.actor }}" \
@@ -36,7 +46,8 @@ jobs:
       - name: Checkout original repository
         uses: actions/checkout@v4
         with:
-          repository: Mohirdevelopers/medium-clone-backend-initial
+          repository: ${{ github.event.inputs.source_owner }}/${{ github.event.inputs.source_repo }}
+          token: ${{ secrets.STUDENT_GITHUB_TOKEN }}
           path: original-repo
           ref: main
           fetch-depth: 0
@@ -44,6 +55,8 @@ jobs:
       - name: Checkout forked repository
         uses: actions/checkout@v4
         with:
+          repository: ${{ github.event.inputs.fork_owner }}/${{ github.event.inputs.fork_repo }}
+          token: ${{ secrets.STUDENT_GITHUB_TOKEN }}
           path: forked-repo
           ref: main
           fetch-depth: 0
