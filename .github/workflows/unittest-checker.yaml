@@ -79,39 +79,77 @@ jobs:
           ref: main
           fetch-depth: 0
 
-      - name: Notify building application
+      - name: Notify preparing test environment
         run: |
           curl -sf -X PUT "${{ secrets.API_BASE_URL }}/github/feedbacks/${{ github.event.inputs.github_feedback_id }}/" \
             --header "X-API-KEY: ${{ secrets.X_API_KEY }}" \
             --form "github_username=${{ github.actor }}" \
             --form "action_run_id=${{ github.run_id }}" \
             --form "status=step" \
-            --form "step=Building application"
+            --form "step=Preparing test environment"
 
-      - name: Inject tests and build
+      - name: Inject tests and prepare environment
         working-directory: forked-repo
         run: |
           rm -rf tests
           mv ../original-repo/tests .
           rm -rf ../original-repo
           cp .env.example .env
-          docker compose up -d --build
-          sleep 10s
 
-      - name: Check application health
+      - name: Notify building test image
         run: |
           curl -sf -X PUT "${{ secrets.API_BASE_URL }}/github/feedbacks/${{ github.event.inputs.github_feedback_id }}/" \
             --header "X-API-KEY: ${{ secrets.X_API_KEY }}" \
             --form "github_username=${{ github.actor }}" \
             --form "action_run_id=${{ github.run_id }}" \
             --form "status=step" \
-            --form "step=Checking application health"
-          for i in $(seq 1 10); do
-            if curl -sf http://127.0.0.1:8000/health/; then
-              echo "Healthy"; break
+            --form "step=Building test image"
+
+      - name: Build test image
+        working-directory: forked-repo
+        run: docker compose build medium_app
+
+      - name: Notify starting dependencies
+        run: |
+          curl -sf -X PUT "${{ secrets.API_BASE_URL }}/github/feedbacks/${{ github.event.inputs.github_feedback_id }}/" \
+            --header "X-API-KEY: ${{ secrets.X_API_KEY }}" \
+            --form "github_username=${{ github.actor }}" \
+            --form "action_run_id=${{ github.run_id }}" \
+            --form "status=step" \
+            --form "step=Starting test dependencies"
+
+      - name: Start test dependencies
+        working-directory: forked-repo
+        run: docker compose up -d medium_db_host medium_redis_host
+
+      - name: Wait for dependencies
+        working-directory: forked-repo
+        run: |
+          DB_READY=0
+          for i in $(seq 1 30); do
+            if docker compose exec -T medium_db_host sh -lc 'pg_isready -U "$POSTGRES_USER" -d "$POSTGRES_DB"'; then
+              DB_READY=1
+              break
             fi
-            sleep 3
+            sleep 2
           done
+          if [ "${DB_READY}" -ne 1 ]; then
+            echo "Postgres did not become ready in time"
+            exit 1
+          fi
+
+          REDIS_READY=0
+          for i in $(seq 1 30); do
+            if docker compose exec -T medium_redis_host sh -lc 'redis-cli ping | grep -q PONG'; then
+              REDIS_READY=1
+              break
+            fi
+            sleep 2
+          done
+          if [ "${REDIS_READY}" -ne 1 ]; then
+            echo "Redis did not become ready in time"
+            exit 1
+          fi
 
       - name: Notify running tests
         run: |
@@ -126,19 +164,57 @@ jobs:
         working-directory: forked-repo
         run: |
           mkdir -p reports
-          docker compose exec -T medium_app pytest ${{ github.event.inputs.tests_path }} \
-            --cache-clear -vv \
-            --json-report \
-            --json-report-file=./reports/unittest-checker-report.json \
-            --json-report-indent=2
+          set +e
+          docker compose run --rm --no-deps --entrypoint sh medium_app -lc '
+            mkdir -p reports
+            pytest ${{ github.event.inputs.tests_path }} \
+              --cache-clear -vv \
+              --json-report \
+              --json-report-file=./reports/unittest-checker-report.json \
+              --json-report-indent=2
+          '
+          TEST_EXIT=$?
+
+          if [ ! -f reports/unittest-checker-report.json ]; then
+            cat > reports/unittest-checker-report.json <<EOF
+          {
+            "created": "$(date -u +"%Y-%m-%dT%H:%M:%SZ")",
+            "duration": 0,
+            "exitcode": ${TEST_EXIT},
+            "summary": {
+              "total": 1,
+              "passed": 0,
+              "failed": 0,
+              "error": 1
+            },
+            "tests": [
+              {
+                "nodeid": "workflow::execution",
+                "outcome": "error",
+                "call": {
+                  "longrepr": "Pytest process exited before producing a JSON report. Exit code: ${TEST_EXIT}"
+                }
+              }
+            ]
+          }
+          EOF
+          fi
+
+          exit ${TEST_EXIT}
         continue-on-error: true
 
       - name: Upload test report artifact
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: unittest-checker-artifact
           path: forked-repo/reports/unittest-checker-report.json
           retention-days: 30
+
+      - name: Stop test environment
+        if: always()
+        working-directory: forked-repo
+        run: docker compose down -v
 
       - name: Send finished signal
         if: always()
