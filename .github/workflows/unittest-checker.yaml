@@ -32,8 +32,7 @@ jobs:
     steps:
       - name: Clean environment
         run: |
-          rm -rf original-repo
-          rm -rf forked-repo
+          rm -rf original-repo forked-repo
 
       - name: Send started signal
         run: |
@@ -41,7 +40,17 @@ jobs:
             --header "X-API-KEY: ${{ secrets.X_API_KEY }}" \
             --form "github_username=${{ github.actor }}" \
             --form "action_run_id=${{ github.run_id }}" \
-            --form "status=started"
+            --form "status=started" \
+            --form "step=started"
+
+      - name: Notify checkout original repository
+        run: |
+          curl -sf -X PUT "${{ secrets.API_BASE_URL }}/github/feedbacks/${{ github.event.inputs.github_feedback_id }}/" \
+            --header "X-API-KEY: ${{ secrets.X_API_KEY }}" \
+            --form "github_username=${{ github.actor }}" \
+            --form "action_run_id=${{ github.run_id }}" \
+            --form "status=step" \
+            --form "step=Checking original repository"
 
       - name: Checkout original repository
         uses: actions/checkout@v4
@@ -52,6 +61,15 @@ jobs:
           ref: main
           fetch-depth: 0
 
+      - name: Notify checkout forked repository
+        run: |
+          curl -sf -X PUT "${{ secrets.API_BASE_URL }}/github/feedbacks/${{ github.event.inputs.github_feedback_id }}/" \
+            --header "X-API-KEY: ${{ secrets.X_API_KEY }}" \
+            --form "github_username=${{ github.actor }}" \
+            --form "action_run_id=${{ github.run_id }}" \
+            --form "status=step" \
+            --form "step=Checking forked repository"
+
       - name: Checkout forked repository
         uses: actions/checkout@v4
         with:
@@ -61,32 +79,48 @@ jobs:
           ref: main
           fetch-depth: 0
 
-      - name: Inject tests from original repo
+      - name: Notify building application
         run: |
-          rm -rf forked-repo/tests
-          mv original-repo/tests forked-repo/
-          rm -rf original-repo
+          curl -sf -X PUT "${{ secrets.API_BASE_URL }}/github/feedbacks/${{ github.event.inputs.github_feedback_id }}/" \
+            --header "X-API-KEY: ${{ secrets.X_API_KEY }}" \
+            --form "github_username=${{ github.actor }}" \
+            --form "action_run_id=${{ github.run_id }}" \
+            --form "status=step" \
+            --form "step=Building application"
 
-      - name: Create .env file
-        working-directory: forked-repo
-        run: cp .env.example .env
-
-      - name: Build and start application
+      - name: Inject tests and build
         working-directory: forked-repo
         run: |
+          rm -rf tests
+          mv ../original-repo/tests .
+          rm -rf ../original-repo
+          cp .env.example .env
           docker compose up -d --build
           sleep 10s
-          docker ps -a
-          docker logs medium_app || true
 
       - name: Check application health
         run: |
+          curl -sf -X PUT "${{ secrets.API_BASE_URL }}/github/feedbacks/${{ github.event.inputs.github_feedback_id }}/" \
+            --header "X-API-KEY: ${{ secrets.X_API_KEY }}" \
+            --form "github_username=${{ github.actor }}" \
+            --form "action_run_id=${{ github.run_id }}" \
+            --form "status=step" \
+            --form "step=Checking application health"
           for i in $(seq 1 10); do
             if curl -sf http://127.0.0.1:8000/health/; then
               echo "Healthy"; break
             fi
             sleep 3
           done
+
+      - name: Notify running tests
+        run: |
+          curl -sf -X PUT "${{ secrets.API_BASE_URL }}/github/feedbacks/${{ github.event.inputs.github_feedback_id }}/" \
+            --header "X-API-KEY: ${{ secrets.X_API_KEY }}" \
+            --form "github_username=${{ github.actor }}" \
+            --form "action_run_id=${{ github.run_id }}" \
+            --form "status=step" \
+            --form "step=Running tests"
 
       - name: Run tests
         working-directory: forked-repo
@@ -118,4 +152,5 @@ jobs:
             --header "X-API-KEY: ${{ secrets.X_API_KEY }}" \
             --form "github_username=${{ github.actor }}" \
             --form "action_run_id=${{ github.run_id }}" \
-            --form "status=$STATUS"
+            --form "status=$STATUS" \
+            --form "step=$STATUS"
